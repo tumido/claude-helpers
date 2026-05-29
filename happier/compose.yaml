@@ -1,0 +1,16 @@
+volumes:
+  relay-data:
+
+services:
+  relay:
+    image: ghcr.io/happier-dev/relay-server:dev
+    ports:
+      - "3005:3005"
+    environment:
+      PORT: "3005"
+      HAPPIER_SERVER_FLAVOR: full
+      HANDY_MASTER_SECRET: secretsecrethappiersecret
+      HAPPIER_FILES_BACKEND: local
+      HAPPIER_SERVER_LIGHT_DATA_DIR: /data
+    volumes:
+      - relay-data:/data

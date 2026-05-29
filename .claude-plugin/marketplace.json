@@ -1,0 +1,13 @@
+{
+    "name": "claude-helpers",
+    "owner": {
+        "name": "tumido"
+    },
+    "plugins": [
+        {
+            "name": "helpers",
+            "source": "./",
+            "description": "Personal grab-bag of Claude Code skills"
+        }
+    ]
+}

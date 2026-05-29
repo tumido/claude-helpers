@@ -1,0 +1,8 @@
+{
+    "name": "helpers",
+    "description": "Personal grab-bag of Claude Code skills: project bootstrap, doc upkeep, issue tracker maintenance",
+    "version": "1.0.0",
+    "author": {
+        "name": "tumido"
+    }
+}
