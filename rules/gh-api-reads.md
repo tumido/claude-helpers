@@ -29,6 +29,10 @@ via permissions, output JSON, and can be piped through `jq`.
 Scripts are at `$CLAUDE_HELPERS_DIR/scripts/` (env var set in
 `~/.claude/settings.json`).
 
+**Important:** Always expand `$CLAUDE_HELPERS_DIR` to its absolute
+value before executing any command. Using `$VAR` syntax in commands
+triggers a security prompt that cannot be suppressed by allow rules.
+
 | Script | Usage | Purpose |
 |--------|-------|---------|
 | `gh-project-fields.sh` | `<owner> <project-number>` | Project ID, Status field ID, option IDs |
