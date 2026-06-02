@@ -80,6 +80,22 @@ must incorporate:
 Write the plan and call `ExitPlanMode` to present it to the user for
 approval. Do not proceed until the user approves.
 
+## Git in worktrees
+
+A worktree is a full git working tree — all git commands (`log`,
+`diff`, `status`, `branch`, etc.) work directly from the worktree
+directory. Do **not** `cd` back to the main repo root to run git
+commands; it is unnecessary and triggers extra permission prompts.
+
+```bash
+# Good — run directly in the worktree
+git log --oneline -5
+git diff main
+
+# Bad — unnecessary cd to repo root
+cd /path/to/repo && git log worktree-branch --oneline -5
+```
+
 ## Step 5: Execute
 
 Implement the approved plan in the main context. Follow the project's
@@ -90,4 +106,12 @@ running `/helpers:ship` to commit and open a PR.
 
 ## Step 6: Clean up worktree
 
-If the session started in a worktree (Step 2), run `/helpers:done`.
+If the session started in a worktree (Step 2), ask the user before
+removing it. Use `AskUserQuestion`:
+
+- Question: "Remove the worktree and return to the main repo?"
+- Options: "Yes, remove worktree" / "No, keep it"
+
+If **yes**: run `/helpers:done`.
+If **no**: leave the worktree in place and let the user know they can
+run `/helpers:done` later when ready.
