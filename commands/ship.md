@@ -107,7 +107,39 @@ If skipped, stop here — do not continue to Step 2c.
 
 ## Step 2c: PR mode
 
-Study all commits diverged from the default branch:
+Before anything else, sync with the upstream repository and rebase on
+the latest default branch.
+
+First, determine the fetch remote — prefer `upstream` if configured,
+otherwise fall back to `origin`:
+
+```bash
+git remote get-url upstream 2>/dev/null && echo upstream || echo origin
+```
+
+Fetch from that remote and rebase:
+
+```bash
+git fetch <remote>
+git rebase <remote>/<default-branch>
+```
+
+If the rebase produces conflicts, resolve them (edit conflicting files,
+`git add`, `git rebase --continue`) and repeat until the rebase
+completes cleanly.
+
+After a successful rebase, run the project's test suite to make sure
+nothing broke. Check CLAUDE.md or the repo for the test command (e.g.,
+`npm test`, `make test`, `pytest`). If tests fail, fix the issues and
+amend/re-commit before proceeding.
+
+Once tests pass, force-push the branch so the remote matches:
+
+```bash
+git push --force-with-lease
+```
+
+Now study all commits diverged from the default branch:
 
 ```bash
 git log --format='%h %s' <default-branch>..HEAD
