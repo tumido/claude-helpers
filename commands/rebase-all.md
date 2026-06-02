@@ -57,10 +57,20 @@ git push origin <default-branch>
 
 ## Step 3: List open PRs
 
-Fetch all open PRs authored by the current user:
+Ask whether to include draft PRs using `AskUserQuestion`:
+
+- Question: "Include draft PRs?"
+- Options: "Yes, include drafts" / "No, skip drafts"
+
+Fetch all open PRs authored by the current user. If the user chose to
+skip drafts, add `--draft false` to exclude them:
 
 ```bash
-gh pr list --author '@me' --state open --json number,title,headRefName,baseRefName --limit 100
+# Include drafts (default):
+gh pr list --author '@me' --state open --json number,title,headRefName,baseRefName,isDraft --limit 100
+
+# Skip drafts:
+gh pr list --author '@me' --state open --draft false --json number,title,headRefName,baseRefName,isDraft --limit 100
 ```
 
 Filter the JSON output to keep only PRs where `baseRefName` equals the
@@ -73,7 +83,8 @@ If no qualifying PRs exist, report "No open PRs targeting
 Present the list and confirm using `AskUserQuestion`:
 
 - Question: "Rebase these PRs onto the updated `<default-branch>`?"
-  Show each PR's number, title, and branch in the description.
+  Show each PR's number, title, branch, and whether it is a draft in
+  the description.
 - Options: "Yes, rebase all" / "Abort"
 
 If aborted, stop.
