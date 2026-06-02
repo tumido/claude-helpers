@@ -5,15 +5,29 @@ description: Pick the next issue to work on from the project board and start imp
 Find Ready items on the GitHub project board, recommend the best one
 to work on next, assign it on confirmation, and kick off implementation.
 
+`<HELPERS_DIR>` appears in commands below. Before running any
+script, run `printenv CLAUDE_HELPERS_DIR` to get the absolute path,
+then substitute that path for every `<HELPERS_DIR>` in the commands
+you execute.
+
 ## Step 1: Gather project metadata
+
+Run all three of these **in parallel** (single message, multiple tool
+calls):
 
 1. **Repository** — `gh repo view --json owner,name`
 
-2. **Project** — find the project number and fetch field IDs:
+2. **Project fields** — find the project number, then fetch field IDs:
 
    ```bash
-   gh project list --owner <OWNER> --format json
-   bash $CLAUDE_HELPERS_DIR/scripts/gh-project-fields.sh <OWNER> <N>
+   gh project list --owner <OWNER> --format json \
+     | jq '.projects[] | select(.title | test("<keyword>"; "i")) | {number, title}'
+   ```
+
+   Use the repo name or a known keyword to filter. Then:
+
+   ```bash
+   bash <HELPERS_DIR>/scripts/gh-project-fields.sh <OWNER> <N>
    ```
 
    Save: project node ID, Status field ID, and option IDs for each
@@ -22,35 +36,70 @@ to work on next, assign it on confirmation, and kick off implementation.
 3. **Milestones** — `gh api --method GET repos/:owner/:repo/milestones`
    to identify which milestone(s) are active.
 
-## Step 2: Query Ready items
+## Step 2: Check existing work-in-progress
 
-Fetch all project items (auto-paginates, flattened output) and filter
-in one call:
+Get the current user's login and check for items already assigned to
+them:
 
 ```bash
-bash $CLAUDE_HELPERS_DIR/scripts/gh-project-items.sh <OWNER> <N> \
-  | jq '[.[] | select(.status == "Ready" and .state == "OPEN" and (.assignees | length == 0) and .parent == null)]'
+gh api --method GET user --jq '.login'
 ```
 
-## Step 3: Rank and recommend
+```bash
+bash <HELPERS_DIR>/scripts/gh-project-items.sh <OWNER> <N> --no-body \
+  | jq --arg me '<LOGIN>' '[.[] | select(.state == "OPEN" and (.assignees | any(. == $me)) and .status == "In progress")]'
+```
 
-From the filtered list, pick the best candidate using these priorities
-(highest first):
+If the user has in-progress items, present them and use
+`AskUserQuestion`:
 
-1. **Active milestone** — issues in the current milestone beat those
-   without one.
-2. **Fewer remaining blockers on other items** — issues that other
-   Ready/Backlog items depend on should be done first (they unblock
-   more work). Check whether any other project item lists this issue
-   in its `blockedBy`.
-3. **Labels** — prioritize `bug` or `critical` over feature work.
-4. **Simplicity** — when all else is equal, prefer the smaller-scoped
-   issue (shorter body, fewer acceptance criteria) to build momentum.
+- "Continue existing work on #N?"
+- "Pick something new"
 
-Present the **full ranked list** as a numbered table:
+If they choose to continue, invoke `/helpers:implement <N>` and stop.
 
-| #   | Issue | Title | Milestone | Labels | Why |
-| --- | ----- | ----- | --------- | ------ | --- |
+## Step 3: Query and rank Ready items
+
+Fetch all project items (without bodies) and compute ranking data in
+a single jq pipeline:
+
+```bash
+bash <HELPERS_DIR>/scripts/gh-project-items.sh <OWNER> <N> --no-body \
+  | jq '
+    . as $all |
+    [.[] | select(
+      .status == "Ready" and
+      .state == "OPEN" and
+      (.assignees | length == 0) and
+      .parent == null
+    )] |
+    map(. as $item | . + {
+      blocks_count: [$all[] | select(
+        .state == "OPEN" and
+        (.blocked_by[]? | .number) == $item.number
+      )] | length
+    })
+  '
+```
+
+This produces a list of Ready items, each with a `blocks_count`
+showing how many other open items depend on it.
+
+## Step 4: Score and recommend
+
+Score each candidate using these weights:
+
+| Criterion | Points | Rationale |
+|-----------|--------|-----------|
+| In active milestone | +10 | Milestone work has a deadline |
+| Per open item it blocks | +5 | Unblocks more downstream work |
+| `bug` or `critical` label | +3 | Defects before features |
+
+Sort descending by total score. Present the **full ranked list** as
+a numbered table:
+
+| # | Issue | Title | Score | Milestone | Labels | Why |
+|---|-------|-------|-------|-----------|--------|-----|
 
 Highlight the top recommendation with a short explanation of why it
 ranks first. Use `AskUserQuestion` to let the user pick:
@@ -58,15 +107,9 @@ ranks first. Use `AskUserQuestion` to let the user pick:
 - Options: the top 3–4 issues by title (e.g. "#42 — Add token refresh")
 - The user can also type a different issue number.
 
-## Step 4: Assign the issue
+## Step 5: Assign the issue
 
-Get the current user's GitHub login:
-
-```bash
-gh api --method GET user --jq '.login'
-```
-
-Assign the chosen issue:
+Assign the chosen issue to the current user:
 
 ```bash
 gh issue edit <N> --add-assignee '<LOGIN>'
@@ -89,7 +132,7 @@ gh api graphql -f query='
 '
 ```
 
-## Step 5: Check for repo-specific implementation requirements
+## Step 6: Check for repo-specific implementation requirements
 
 Before handing off to the implement skill, check whether the target
 repository has any custom skills or conventions that should feed into
@@ -111,10 +154,10 @@ implementation. Run these checks **in parallel**:
 Collect anything relevant into a short `additional requirements` string
 that will be passed to the implement skill.
 
-## Step 6: Start implementation
+## Step 7: Start implementation
 
 Invoke the implement skill with the chosen issue number and any
-additional requirements discovered in Step 5:
+additional requirements discovered in Step 6:
 
 ```
 /helpers:implement <N> <additional requirements>
