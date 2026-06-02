@@ -6,6 +6,11 @@ Maintain the GitHub project board. Move unblocked items from Backlog
 to Ready, and flag items whose status doesn't match their actual
 state (e.g., "In progress" but the issue is closed).
 
+`<HELPERS_DIR>` appears in commands below. Before running any
+script, run `printenv CLAUDE_HELPERS_DIR` to get the absolute path,
+then substitute that path for every `<HELPERS_DIR>` in the commands
+you execute.
+
 ## Step 1: Gather project metadata
 
 1. **Repository** — `gh repo view --json owner,name`
@@ -14,7 +19,7 @@ state (e.g., "In progress" but the issue is closed).
 
    ```bash
    gh project list --owner <OWNER> --format json
-   bash $CLAUDE_HELPERS_DIR/scripts/gh-project-fields.sh <OWNER> <N>
+   bash <HELPERS_DIR>/scripts/gh-project-fields.sh <OWNER> <N>
    ```
 
    Save: project node ID, Status field ID, and option IDs for each
@@ -28,7 +33,7 @@ state (e.g., "In progress" but the issue is closed).
 Fetch every item (auto-paginates, flattened output):
 
 ```bash
-bash $CLAUDE_HELPERS_DIR/scripts/gh-project-items.sh <OWNER> <N>
+bash <HELPERS_DIR>/scripts/gh-project-items.sh <OWNER> <N>
 ```
 
 Output fields per item: `item_id`, `status`, `status_option_id`,

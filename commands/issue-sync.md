@@ -7,6 +7,11 @@ blocking dependencies, update existing issues with comments, and
 refresh the pinned tracking issue. Run `/helpers:issue-audit` first
 to identify what needs doing.
 
+`<HELPERS_DIR>` appears in commands below. Before running any
+script, run `printenv CLAUDE_HELPERS_DIR` to get the absolute path,
+then substitute that path for every `<HELPERS_DIR>` in the commands
+you execute.
+
 ## Step 1: Gather repo and project metadata
 
 1. **Repository** — `gh repo view --json owner,name` for owner/repo.
@@ -22,7 +27,7 @@ to identify what needs doing.
 
    ```bash
    gh project list --owner <OWNER> --format json
-   bash $CLAUDE_HELPERS_DIR/scripts/gh-project-fields.sh <OWNER> <N>
+   bash <HELPERS_DIR>/scripts/gh-project-fields.sh <OWNER> <N>
    ```
 
 ## Step 2: Confirm scope with user
@@ -78,7 +83,7 @@ gh project item-add <PROJECT_NUMBER> \
 Fetch GraphQL node IDs for every issue involved in a dependency:
 
 ```bash
-bash $CLAUDE_HELPERS_DIR/scripts/gh-issue-deps.sh <OWNER> <REPO> <N1> <N2> ... \
+bash <HELPERS_DIR>/scripts/gh-issue-deps.sh <OWNER> <REPO> <N1> <N2> ... \
   | jq -r '.data.repository.issue | "\(.number) \(.id)"'
 ```
 

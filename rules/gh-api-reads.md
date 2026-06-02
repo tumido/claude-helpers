@@ -4,6 +4,14 @@ description: Use --method GET for REST reads and plugin scripts for GraphQL read
 
 # GitHub API read convention
 
+## Resolve helpers path
+
+Before running any script, run `printenv CLAUDE_HELPERS_DIR` to get
+the absolute path. Substitute that path for every `<HELPERS_DIR>` in
+the commands you execute. Never pass `$CLAUDE_HELPERS_DIR` directly
+in commands — the permission system cannot expand environment
+variables, so the command will be rejected.
+
 ## REST reads
 
 Always include `--method GET` explicitly — even though GET is the
@@ -26,26 +34,20 @@ gh api -X PATCH repos/owner/repo/issues/42 -f state=closed
 from this plugin's `scripts/` directory instead. They are auto-allowed
 via permissions, output JSON, and can be piped through `jq`.
 
-Scripts are at `$CLAUDE_HELPERS_DIR/scripts/` (env var set in
-`~/.claude/settings.json`).
-
-**Important:** Always expand `$CLAUDE_HELPERS_DIR` to its absolute
-value before executing any command. Using `$VAR` syntax in commands
-triggers a security prompt that cannot be suppressed by allow rules.
-
 | Script | Usage | Purpose |
 |--------|-------|---------|
 | `gh-project-fields.sh` | `<owner> <project-number>` | Project ID, Status field ID, option IDs |
-| `gh-project-items.sh` | `<owner> <project-number>` | All project items with status, labels, milestones, assignees, blockedBy (auto-paginates) |
+| `gh-project-items.sh` | `<owner> <project-number> [--no-body]` | All project items with status, labels, milestones, assignees, blockedBy (auto-paginates). `--no-body` omits issue body text for lighter output. |
 | `gh-issue-deps.sh` | `<owner> <repo> <number...>` | blockedBy + closedByPRs for one or more issues |
 | `gh-search-issues.sh` | `<query>` | Search issues by query string |
 
 ```bash
-# Examples — auto-allowed
-bash "$CLAUDE_HELPERS_DIR/scripts/gh-project-fields.sh" redhat-et 31
-bash "$CLAUDE_HELPERS_DIR/scripts/gh-project-items.sh" redhat-et 31 | jq '[.[] | select(.status == "Ready")]'
-bash "$CLAUDE_HELPERS_DIR/scripts/gh-issue-deps.sh" redhat-et hermes 158 160 164
-bash "$CLAUDE_HELPERS_DIR/scripts/gh-search-issues.sh" 'repo:redhat-et/hermes is:issue is:open #158'
+# Examples — auto-allowed (use resolved HELPERS_DIR)
+bash <HELPERS_DIR>/scripts/gh-project-fields.sh redhat-et 31
+bash <HELPERS_DIR>/scripts/gh-project-items.sh redhat-et 31 | jq '[.[] | select(.status == "Ready")]'
+bash <HELPERS_DIR>/scripts/gh-project-items.sh redhat-et 31 --no-body | jq '.[0]'
+bash <HELPERS_DIR>/scripts/gh-issue-deps.sh redhat-et hermes 158 160 164
+bash <HELPERS_DIR>/scripts/gh-search-issues.sh 'repo:redhat-et/hermes is:issue is:open #158'
 ```
 
 GraphQL **mutations** (project status updates, addBlockedBy, etc.)

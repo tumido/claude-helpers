@@ -8,6 +8,16 @@ fi
 
 OWNER=$1
 PROJECT=$2
+NO_BODY=false
+if [ "${3:-}" = "--no-body" ]; then
+  NO_BODY=true
+fi
+
+if [ "$NO_BODY" = true ]; then
+  BODY_FIELD=""
+else
+  BODY_FIELD="body"
+fi
 
 ALL_ITEMS='[]'
 CURSOR=""
@@ -36,7 +46,7 @@ while true; do
                 number
                 title
                 state
-                body
+                $BODY_FIELD
                 labels(first: 10) { nodes { name } }
                 milestone { title }
                 parent { number title }
@@ -65,14 +75,13 @@ while true; do
   CURSOR=$(echo "$RESULT" | jq -r '.data.organization.projectV2.items.pageInfo.endCursor')
 done
 
-echo "$ALL_ITEMS" | jq '[.[] | select(.content.number != null) | {
+echo "$ALL_ITEMS" | jq --arg no_body "$NO_BODY" '[.[] | select(.content.number != null) | {
   item_id: .id,
   status: (.fieldValueByName // {}).name,
   status_option_id: (.fieldValueByName // {}).optionId,
   number: .content.number,
   title: .content.title,
   state: .content.state,
-  body: .content.body,
   labels: [(.content.labels.nodes // [])[] | .name],
   milestone: (.content.milestone // {}).title,
   parent: (.content.parent // null),
@@ -80,4 +89,4 @@ echo "$ALL_ITEMS" | jq '[.[] | select(.content.number != null) | {
   tracked_in: [(.content.trackedInIssues.nodes // [])[] | {number, title}],
   blocked_by: [(.content.blockedBy.nodes // [])[] | {number, title, state}],
   blocked_by_count: ((.content.blockedBy // {}).totalCount // 0)
-}]'
+} + if $no_body == "false" then {body: .content.body} else {} end]'
