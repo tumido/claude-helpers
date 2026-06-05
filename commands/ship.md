@@ -5,6 +5,11 @@ description: Draft a commit message or pull request based on current git state â
 Investigate the current working tree and branch state, then draft
 either a commit message or a pull request depending on what's needed.
 
+`<HELPERS_DIR>` appears in commands below. Before running any
+script, run `printenv CLAUDE_HELPERS_DIR` to get the absolute path,
+then substitute that path for every `<HELPERS_DIR>` in the commands
+you execute.
+
 ## Step 1: Assess git state
 
 Run the state-gathering script in a single call:
