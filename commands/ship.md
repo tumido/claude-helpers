@@ -7,29 +7,17 @@ either a commit message or a pull request depending on what's needed.
 
 ## Step 1: Assess git state
 
-Run all of these in parallel:
+Run the state-gathering script in a single call:
 
-1. **Working tree** — `git status --short` to see if there are
-   uncommitted changes (staged or unstaged).
+```bash
+bash <HELPERS_DIR>/scripts/git-ship-state.sh
+```
 
-2. **Current branch** — `git branch --show-current` to get the branch
-   name.
-
-3. **Default branch** — `git rev-parse --abbrev-ref origin/HEAD` to
-   find the remote default branch (e.g., `origin/main`). Fall back to
-   `origin/main` if unset.
-
-4. **Unpushed commits** — first check if an upstream is configured
-   with `git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null`.
-   If it returns a ref, compare with
-   `git log <upstream-ref>..HEAD --oneline`. If no upstream is set,
-   treat all commits diverged from the default branch as unpushed.
-   Avoid using `@{upstream}` or `@{u}` directly in shell commands —
-   the braces trigger sandbox permission prompts.
-
-5. **Diff against default branch** —
-   `git log --oneline <default-branch>..HEAD` for commit list, and
-   `git diff <default-branch>...HEAD --stat` for a file-level summary.
+Parse the sectioned output (`=== STATUS ===`, `=== BRANCH ===`,
+`=== DEFAULT_BRANCH ===`, `=== UPSTREAM ===`, `=== COMMITS ===`,
+`=== DIFFSTAT ===`) to extract working-tree status, current branch,
+default branch, upstream tracking info, unpushed commits, and the
+diff stat.
 
 From this, determine the mode:
 
