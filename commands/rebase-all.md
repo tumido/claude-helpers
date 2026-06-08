@@ -63,14 +63,14 @@ Ask whether to include draft PRs using `AskUserQuestion`:
 - Options: "Yes, include drafts" / "No, skip drafts"
 
 Fetch all open PRs authored by the current user. If the user chose to
-skip drafts, add `--draft false` to exclude them:
+skip drafts, add `--draft=false` to exclude them:
 
 ```bash
 # Include drafts (default):
 gh pr list --author '@me' --state open --json number,title,headRefName,baseRefName,isDraft --limit 100
 
 # Skip drafts:
-gh pr list --author '@me' --state open --draft false --json number,title,headRefName,baseRefName,isDraft --limit 100
+gh pr list --author '@me' --state open --draft=false --json number,title,headRefName,baseRefName,isDraft --limit 100
 ```
 
 Filter the JSON output to keep only PRs where `baseRefName` equals the
