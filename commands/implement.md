@@ -46,11 +46,39 @@ Apply the choices:
 
 - If **current directory + current branch**: proceed as-is.
 
+## Git in worktrees
+
+A worktree is a full git working tree — all git commands (`log`,
+`diff`, `status`, `branch`, etc.) work directly from the worktree
+directory. Do **not** `cd` back to the main repo root or use
+`git -C <repo-root>` to run git commands; it is unnecessary, triggers
+extra permission prompts, and may discover wrong file state (the main
+tree could be on a different branch).
+
+```bash
+# Good — run directly in the worktree
+git log --oneline -5
+git diff main
+
+# Bad — unnecessary cd or -C to repo root
+cd /path/to/repo && git log worktree-branch --oneline -5
+git -C /path/to/repo log --oneline -5
+```
+
+This applies everywhere: exploration, implementation, and committing.
+
 ## Step 3: Analyze codebase
 
 Launch 2-3 `Explore` subagents **in parallel** (send all Agent tool
 calls in a single message). Each agent receives the issue title, body,
 and the additional requirements so it can focus its search.
+
+**Important — worktree context**: All exploration must happen from the
+current working directory. If a worktree was entered in Step 2, the
+CWD is already the worktree — tell each agent to explore from `.` and
+never use `git -C` to reference the main repo root. The worktree is
+the codebase; the main tree may be on a different branch with
+different files.
 
 **Agent 1 — Project structure**: Investigate the project layout, tech
 stack, build system, entry points, and key configuration files.
@@ -79,22 +107,6 @@ must incorporate:
 
 Write the plan and call `ExitPlanMode` to present it to the user for
 approval. Do not proceed until the user approves.
-
-## Git in worktrees
-
-A worktree is a full git working tree — all git commands (`log`,
-`diff`, `status`, `branch`, etc.) work directly from the worktree
-directory. Do **not** `cd` back to the main repo root to run git
-commands; it is unnecessary and triggers extra permission prompts.
-
-```bash
-# Good — run directly in the worktree
-git log --oneline -5
-git diff main
-
-# Bad — unnecessary cd to repo root
-cd /path/to/repo && git log worktree-branch --oneline -5
-```
 
 ## Step 5: Execute
 
